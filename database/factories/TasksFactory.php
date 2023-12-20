@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Tasks;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,5 +23,14 @@ class TasksFactory extends Factory
             'start' => now(),
             'end' => now(),
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Tasks $task) {
+            error_log("made {$task->toArray()["id"]}");
+        })->afterCreating(function (Tasks $task) {
+            error_log("created {$task->toArray()["id"]}");
+        });
     }
 }

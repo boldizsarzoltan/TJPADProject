@@ -2,65 +2,105 @@
 
 namespace App\Http\Controllers;
 
+use App\Custom\FlashMessages;
+use App\DataTables\TasksDataTable;
 use App\Http\Requests\StoreTasksRequest;
 use App\Http\Requests\UpdateTasksRequest;
 use App\Models\Tasks;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class TasksController extends Controller
 {
+    use AuthorizesRequests;
+    use FlashMessages;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(TasksDataTable $dataTable)
     {
-        //
+        return $dataTable->render('tasks');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return view('createtask');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreTasksRequest $request)
+    public function edit(Request $request, int $taskId)
     {
-        //
+        $task = Tasks::query()
+            ->where("id", $taskId)
+            ->where("user_id", Auth::id())->get();
+        if($task->count() != 1 ){
+            return redirect("/error")->withErrors([
+                'error' => "Task not found"
+            ]);
+        }
+        return view('edittask')
+            ->with([
+                'task_id' => $taskId,
+                'task' => $task->toArray()[0]
+            ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Tasks $tasks)
+    public function delete(Request $request, int $taskId)
     {
-        //
+        $task = Tasks::query()
+            ->where("id", $taskId)
+            ->where("user_id", Auth::id())->first();
+        $task->delete();
+        return redirect(route('list_tasks'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Tasks $tasks)
+    public function createAction(Request $request)
     {
-        //
+        try {
+            $token = csrf_token();
+            $this->validate($request, [
+                'name' => 'required',
+                'description' => 'required',
+                'start' => 'required|date_format:Y-m-d\TH:i:s|after_or_equal:' . date(DATE_ATOM),
+                'end' => 'required|date_format:Y-m-d\TH:i:s|after_or_equal:' . date(DATE_ATOM)
+            ]);
+            $task = new Tasks($request->all());
+            $task->user_id = Auth::id();
+            $task->save();
+            Session::flash('alert-success', 'Created');
+            return redirect(route('list_tasks'));
+        }
+        catch (\RuntimeException $runtimeException) {
+            return back()->withInput()->withErrors([
+                'error' => $runtimeException->getMessage()
+            ]);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateTasksRequest $request, Tasks $tasks)
+    public function editAction(Request $request, int $taskId)
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Tasks $tasks)
-    {
-        //
+        try {
+            $token = csrf_token();
+            $this->validate($request, [
+                'name' => 'required',
+                'description' => 'required',
+                'start' => 'required|date_format:Y-m-d\TH:i:s',
+                'end' => 'required|date_format:Y-m-d\TH:i:s|after_or_equal:' . date(DATE_ATOM)
+            ]);
+            $task = Tasks::query()
+                ->where("id", $taskId)
+                ->where("user_id", Auth::id())->first();
+            $task->fill($request->all());
+            $task->update();
+            Session::flash('alert-success', 'Updated');
+            return redirect(route('list_tasks'));
+        }
+        catch (\RuntimeException $runtimeException) {
+            return back()->withInput()->withErrors([
+                'error' => $runtimeException->getMessage()
+            ]);
+        }
     }
 }

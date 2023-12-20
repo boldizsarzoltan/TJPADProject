@@ -1,8 +1,13 @@
 
 <?php
 
+use App\DataTables\TasksDataTable;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RemindersController;
+use App\Http\Controllers\TasksController;
+use App\Models\Tasks;
 use Illuminate\Support\Facades\Route;
+use Yajra\DataTables\DataTables;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,7 +21,42 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
 
 Route::resource('reminders', RemindersController::class);
+Route::get('/tasks', [TasksController::class, 'index'])->name('list_tasks');
+Route::get('create_task', [TasksController::class, "create"])->name("create_link");
+Route::get('edit_task/{task_id}', [TasksController::class, "edit"])->name("edit_link");
+Route::get('delete_link/{task_id}', [TasksController::class, "delete"])->name("delete_link");
+Route::post('edit_task2/{task_id}', [TasksController::class, "editAction"])->name("edit_task_name");
+Route::post('create_task2', [TasksController::class, "createAction"])->name("create_task_name");
+Route::get(
+    'login',
+    [LoginController::class, 'login']
+);
+Route::get(
+    'error',
+    function () {
+        return view('error');
+    }
+);
+
+Route::post(
+    '/loginauth',
+    [LoginController::class, 'loginauth']
+);
+Route::get(
+    '/wrong_login',
+    [LoginController::class, 'wrongLoginauth']
+);
+
+Route::put(
+    'register',
+    [LoginController::class, 'register']
+);
+
+Route::get('tasks-data', function(TasksDataTable $tasksDataTable) {
+    $model = $tasksDataTable->query(new Tasks());
+    return DataTables::of($model)->toJson();
+})->name("get-tasks");
