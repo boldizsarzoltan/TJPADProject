@@ -20,7 +20,7 @@ class TasksController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(TasksDataTable $dataTable)
+    public function index(TasksDataTable $dataTable, Tasks $tasks)
     {
         return $dataTable->render('tasks');
     }
@@ -49,11 +49,17 @@ class TasksController extends Controller
 
     public function delete(Request $request, int $taskId)
     {
-        $task = Tasks::query()
-            ->where("id", $taskId)
-            ->where("user_id", Auth::id())->first();
-        $task->delete();
-        return redirect(route('list_tasks'));
+        try {
+            $task = Tasks::query()
+                ->where("id", $taskId)
+                ->where("user_id", Auth::id())->first();
+            $task->delete();
+            return redirect(route('list_tasks'));
+        } catch (\Throwable $throwable) {
+            return back()->withInput()->withErrors([
+                'error' => $throwable->getMessage()
+            ]);
+        }
     }
 
     public function createAction(Request $request)
@@ -87,7 +93,7 @@ class TasksController extends Controller
                 'name' => 'required',
                 'description' => 'required',
                 'start' => 'required|date_format:Y-m-d\TH:i:s',
-                'end' => 'required|date_format:Y-m-d\TH:i:s|after_or_equal:' . date(DATE_ATOM)
+                'end' => 'required|date_format:Y-m-d\TH:i:s'
             ]);
             $task = Tasks::query()
                 ->where("id", $taskId)

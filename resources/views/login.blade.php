@@ -20,6 +20,6 @@
     <div class="alert alert-danger">{{ $message }}</div>
     @enderror
 
-    <button type="submit" @disabled($errors->isNotEmpty())>Submit</button>
+    <button type="submit" >Submit</button>
 </form>
 @stop

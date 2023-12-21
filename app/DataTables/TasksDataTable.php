@@ -22,6 +22,7 @@ class TasksDataTable extends DataTable
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
+        $query->where("user_id", Auth::id());
         return (new EloquentDataTable($query))
             ->addColumn('action', function(Tasks $data) {
                     $id = $data->id;

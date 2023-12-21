@@ -3,7 +3,6 @@
 
 use App\DataTables\TasksDataTable;
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\RemindersController;
 use App\Http\Controllers\TasksController;
 use App\Models\Tasks;
 use Illuminate\Support\Facades\Route;
@@ -20,21 +19,18 @@ use Yajra\DataTables\DataTables;
 |
 */
 
-Route::get('/', function () {
-    return view('home');
+Route::get('/', function () {return view('home');})->name('home');
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('tasks', [TasksController::class, 'index'])->name('list_tasks');
+    Route::get('create_task', [TasksController::class, "create"])->name("create_link");
+    Route::get('edit_task/{task_id}', [TasksController::class, "edit"])->name("edit_link");
+    Route::get('delete_link/{task_id}', [TasksController::class, "delete"])->name("delete_link");
+    Route::post('edit_task2/{task_id}', [TasksController::class, "editAction"])->name("edit_task_name");
+    Route::post('create_task2', [TasksController::class, "createAction"])->name("create_task_name");
+    Route::get('logout', [LoginController::class, 'logout'])->name("logout");
 });
 
-Route::resource('reminders', RemindersController::class);
-Route::get('/tasks', [TasksController::class, 'index'])->name('list_tasks');
-Route::get('create_task', [TasksController::class, "create"])->name("create_link");
-Route::get('edit_task/{task_id}', [TasksController::class, "edit"])->name("edit_link");
-Route::get('delete_link/{task_id}', [TasksController::class, "delete"])->name("delete_link");
-Route::post('edit_task2/{task_id}', [TasksController::class, "editAction"])->name("edit_task_name");
-Route::post('create_task2', [TasksController::class, "createAction"])->name("create_task_name");
-Route::get(
-    'login',
-    [LoginController::class, 'login']
-);
+Route::get('login', [LoginController::class, 'login'])->name('login');
 Route::get(
     'error',
     function () {
@@ -51,10 +47,8 @@ Route::get(
     [LoginController::class, 'wrongLoginauth']
 );
 
-Route::put(
-    'register',
-    [LoginController::class, 'register']
-);
+Route::get('register',[LoginController::class, 'register'])->name("register");
+Route::post('register_action',[LoginController::class, 'registerAction'])->name("register_action");
 
 Route::get('tasks-data', function(TasksDataTable $tasksDataTable) {
     $model = $tasksDataTable->query(new Tasks());
